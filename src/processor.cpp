@@ -1,0 +1,111 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <assert.h>
+
+#include "../lib/stack/stack_hcpp/stack.h"
+#include "../include/commands.h"
+
+int runProgramm();
+int readFile(FILE* fp, int* cmds);
+
+
+int main(){
+    runProgramm();
+
+    return 0;
+}
+
+int runProgramm(){
+    Stack* stk = stackCtor(0);
+    FILE* fp = fopen("./exe_cmds.txt", "r");
+    int cmd = 0;
+    int ip = 0;
+    int cmds[MAX_CMDS_SIZE] = {};
+
+    readFile(fp, cmds);
+
+    while (1){
+        cmd = cmds[ip++];
+
+        switch(cmd){
+            case(HLT):{
+                return 0;
+            }
+            case(PUSH):{
+                int value = cmds[ip++];
+
+                stackPush(stk, value);
+                continue;
+            }
+            case(ADD):{
+                int value1 = 0;
+                int value2 = 0;
+
+                stackPop(stk, &value1);
+                stackPop(stk, &value2);
+                stackPush(stk, value1 + value2);
+                continue;
+            }
+            case(SUB):{
+                int value1 = 0;
+                int value2 = 0;
+
+                stackPop(stk, &value1);
+                stackPop(stk, &value2);
+                stackPush(stk, value2 - value1);
+                continue;
+            }
+            case(MULT):{
+                int value1 = 0;
+                int value2 = 0;
+
+                stackPop(stk, &value1);
+                stackPop(stk, &value2);
+                stackPush(stk, value1 * value2);
+                continue;
+            }
+            case(DIV):{
+                int value1 = 0;
+                int value2 = 0;
+
+                stackPop(stk, &value1);
+                stackPop(stk, &value2);
+                stackPush(stk, value2 / value1);
+                continue;
+            }
+            case(IN):{
+                int value = 0;
+
+                scanf("%d", &value);
+                stackPush(stk, value);
+                continue;
+            }
+            case(OUT):{
+                int value = 0;
+
+                stackPop(stk, &value);
+                printf("%d\n", value);
+                continue;
+            }
+        }
+    }
+}
+
+int readFile(FILE* fp, int* cmds){
+    assert(fp);
+    assert(cmds);
+
+    int cmd = 0;
+    int ip = 0;
+
+    while (1){
+        fscanf(fp, "%d", &cmd);
+        cmds[ip++] = cmd;
+
+        if (cmds[ip - 1] == HLT){
+            break;
+        }
+    }
+
+    return 0;
+}

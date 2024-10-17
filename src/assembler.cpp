@@ -3,7 +3,8 @@
 #include <stdlib.h>
 #include <assert.h>
 
-#include "assembler.h"
+#include "../include/assembler.h"
+#include "../include/commands.h"
 
 static void runProgramm(int cmds[]);
 static void initCmds(int cmds[]);
@@ -23,7 +24,7 @@ static void runProgramm(int cmds[]){
 }
 
 static void initCmds(int cmds[]){
-    FILE* inter_cmds = fopen("./inter_cmds.txt", "r");
+    FILE* inter_cmds = fopen("./inter_cmds.asm", "r");
     if (inter_cmds== NULL){
         assert(NULL);
     }
@@ -58,7 +59,7 @@ static void initCmds(int cmds[]){
             cmds[ip++] = MULT;
             continue;
         }
-        if (strcmp(cmd, "IN") == 0){
+        if (strcmp(cmd, "in") == 0){
             cmds[ip++] = IN;
             continue;
         }
@@ -68,8 +69,8 @@ static void initCmds(int cmds[]){
         }
         if (strcmp(cmd, "hlt") == 0){
             cmds[ip++] = HLT;
+            break;
         }
-        break;
     }
 
     fclose(inter_cmds);
@@ -89,7 +90,7 @@ static void initExeFile(int cmds[]){
             continue;
         }
         fprintf(exe_cmds, "%d\n", cmds[ip++]);
-        if (cmds[ip] == HLT){
+        if (cmds[ip - 1] == HLT){
             break;
         }
     }

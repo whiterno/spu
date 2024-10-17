@@ -1,8 +1,5 @@
-#ifndef ASSEMBLER_H
-#define ASSEMBLER_H
-
-const int MAX_CMDS_SIZE = 512;
-const int MAX_CMD_SIZE = 32;
+#ifndef COMMANDS_H
+#define COMMANDS_H
 
 enum Commands{
     HLT = -1,
@@ -14,5 +11,8 @@ enum Commands{
     IN,
     OUT
 };
+
+const int MAX_CMDS_SIZE = 512;
+const int MAX_CMD_SIZE = 32;
 
 #endif
