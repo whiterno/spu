@@ -11,6 +11,7 @@ static void runProgramm(int cmds[]);
 static void initCmds(int cmds[]);
 static void initExeFile(int cmds[]);
 static void goThroughFixupLabels(Label labels[], int cmds[]);
+static void pasteAdressArg(Label labels[], int* cmds, int* ip, FILE* inter_cmds);
 
 int main(){
     int cmds[MAX_CMDS_SIZE] = {};
@@ -90,18 +91,41 @@ static void initCmds(int cmds[]){
             cmds[ip++] = OUT;
             continue;
         }
-
         if (strcmp(cmd, "jmp") == 0){
             cmds[ip++] = JMP;
-            char label_name[MAX_LABEL_NAME_SIZE] = {};
-
-            fscanf(inter_cmds, "%s", label_name);
-            int label_adress = findLabelAdress(fixup_labels, label_name, ip);
-
-            cmds[ip++] = label_adress;
+            pasteAdressArg(fixup_labels, cmds, &ip, inter_cmds);
             continue;
         }
-
+        if (strcmp(cmd, "ja") == 0){
+            cmds[ip++] = JA;
+            pasteAdressArg(fixup_labels, cmds, &ip, inter_cmds);
+            continue;
+        }
+        if (strcmp(cmd, "jae") == 0){
+            cmds[ip++] = JAE;
+            pasteAdressArg(fixup_labels, cmds, &ip, inter_cmds);
+            continue;
+        }
+        if (strcmp(cmd, "jb") == 0){
+            cmds[ip++] = JB;
+            pasteAdressArg(fixup_labels, cmds, &ip, inter_cmds);
+            continue;
+        }
+        if (strcmp(cmd, "jbe") == 0){
+            cmds[ip++] = JBE;
+            pasteAdressArg(fixup_labels, cmds, &ip, inter_cmds);
+            continue;
+        }
+        if (strcmp(cmd, "je") == 0){
+            cmds[ip++] = JE;
+            pasteAdressArg(fixup_labels, cmds, &ip, inter_cmds);
+            continue;
+        }
+        if (strcmp(cmd, "jne") == 0){
+            cmds[ip++] = JNE;
+            pasteAdressArg(fixup_labels, cmds, &ip, inter_cmds);
+            continue;
+        }
         if (strcmp(cmd, "hlt") == 0){
             cmds[ip++] = HLT;
             break;
@@ -137,21 +161,7 @@ static void initExeFile(int cmds[]){
     int ip = 0;
 
     while (1){
-        if (cmds[ip] == PUSH){
-            fprintf(exe_cmds, "%d ", cmds[ip++]);
-            fprintf(exe_cmds, "%d\n", cmds[ip++]);
-            continue;
-        }
-        if (cmds[ip] == POP){
-            fprintf(exe_cmds, "%d ", cmds[ip++]);
-            fprintf(exe_cmds, "%d\n", cmds[ip++]);
-        }
-        if (cmds[ip] == PUSHR){
-            fprintf(exe_cmds, "%d ", cmds[ip++]);
-            fprintf(exe_cmds, "%d\n", cmds[ip++]);
-            continue;
-        }
-        if (cmds[ip] == JMP){
+        if (cmds[ip] == PUSH || cmds[ip] == PUSH || cmds[ip] == POP || cmds[ip] == PUSHR || cmds[ip] == JMP || cmds[ip] == JA || cmds[ip] == JAE || cmds[ip] == JB || cmds[ip] == JBE || cmds[ip] == JE || cmds[ip] == JNE){
             fprintf(exe_cmds, "%d ", cmds[ip++]);
             fprintf(exe_cmds, "%d\n", cmds[ip++]);
             continue;
@@ -175,4 +185,13 @@ static void goThroughFixupLabels(Label labels[], int cmds[]){
             }
         }
     }
+}
+
+static void pasteAdressArg(Label labels[], int* cmds, int* ip, FILE* inter_cmds){
+    char label_name[MAX_LABEL_NAME_SIZE] = {};
+
+    fscanf(inter_cmds, "%s", label_name);
+    int label_adress = findLabelAdress(labels, label_name, *ip);
+
+    cmds[(*ip)++] = label_adress;
 }

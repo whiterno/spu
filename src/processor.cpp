@@ -102,6 +102,79 @@ int runProgramm(){
             }
             case(JMP):{
                 ip = cmds[ip];
+                continue;
+            }
+            case(JA):{
+                int value1 = 0;
+                int value2 = 0;
+
+                stackPop(stk, &value2);
+                stackPop(stk, &value1);
+
+                if (value1 > value2){
+                    ip = cmds[ip];
+                }
+                continue;
+            }
+            case(JAE):{
+                int value1 = 0;
+                int value2 = 0;
+
+                stackPop(stk, &value2);
+                stackPop(stk, &value1);
+
+                if (value1 >= value2){
+                    ip = cmds[ip];
+                }
+                continue;
+            }
+            case(JB):{
+                int value1 = 0;
+                int value2 = 0;
+
+                stackPop(stk, &value2);
+                stackPop(stk, &value1);
+
+                if (value1 < value2){
+                    ip = cmds[ip];
+                }
+                continue;
+            }
+            case(JBE):{
+                int value1 = 0;
+                int value2 = 0;
+
+                stackPop(stk, &value2);
+                stackPop(stk, &value1);
+
+                if (value1 <= value2){
+                    ip = cmds[ip];
+                }
+                continue;
+            }
+            case(JE):{
+                int value1 = 0;
+                int value2 = 0;
+
+                stackPop(stk, &value2);
+                stackPop(stk, &value1);
+
+                if (value1 == value2){
+                    ip = cmds[ip];
+                }
+                continue;
+            }
+            case(JNE):{
+                int value1 = 0;
+                int value2 = 0;
+
+                stackPop(stk, &value2);
+                stackPop(stk, &value1);
+
+                if (value1 != value2){
+                    ip = cmds[ip];
+                }
+                continue;
             }
         }
     }

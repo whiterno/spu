@@ -13,7 +13,8 @@ push 1
 add
 pop AX
 
-jmp next:
-
+pushr AX
+push 10
+jbe next:
 
 hlt

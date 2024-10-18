@@ -12,7 +12,13 @@ enum Commands{
     DIV,
     IN,
     OUT,
-    JMP
+    JMP,
+    JA,
+    JAE,
+    JB,
+    JBE,
+    JE,
+    JNE
 };
 
 const int MAX_CMDS_SIZE = 512;
