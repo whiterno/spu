@@ -4,6 +4,7 @@
 
 #include "../lib/stack/stack_hcpp/stack.h"
 #include "../include/commands.h"
+#include "../include/processor.h"
 
 int runProgramm();
 int readFile(FILE* fp, int* cmds);
@@ -21,6 +22,7 @@ int runProgramm(){
     int cmd = 0;
     int ip = 0;
     int cmds[MAX_CMDS_SIZE] = {};
+    int registers[MAX_REGISTERS_AMOUNT] = {};
 
     readFile(fp, cmds);
 
@@ -35,6 +37,17 @@ int runProgramm(){
                 int value = cmds[ip++];
 
                 stackPush(stk, value);
+                continue;
+            }
+            case(PUSHR):{
+                stackPush(stk, registers[cmds[ip++]]);
+                continue;
+            }
+            case(POP):{
+                int value = 0;
+
+                stackPop(stk, &value);
+                registers[cmds[ip++]] = value;
                 continue;
             }
             case(ADD):{
@@ -86,6 +99,9 @@ int runProgramm(){
                 stackPop(stk, &value);
                 printf("%d\n", value);
                 continue;
+            }
+            case(JMP):{
+                ip = cmds[ip];
             }
         }
     }

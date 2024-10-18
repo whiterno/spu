@@ -4,12 +4,15 @@
 enum Commands{
     HLT = -1,
     PUSH,
+    PUSHR,
+    POP,
     ADD,
     SUB,
     MULT,
     DIV,
     IN,
-    OUT
+    OUT,
+    JMP
 };
 
 const int MAX_CMDS_SIZE = 512;

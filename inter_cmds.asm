@@ -1,13 +1,19 @@
-push 30
-push 70
+push 0
+pop AX
+
+next:
+
+pushr AX
+pushr AX
 mult
-
-push 13
-push 7
-add
-
-div
-
 out
+
+pushr AX
+push 1
+add
+pop AX
+
+jmp next:
+
 
 hlt
