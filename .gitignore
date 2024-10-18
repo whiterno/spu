@@ -1,3 +1,5 @@
 obj/
 /dump.txt
 exe/
+/.DS_Store
+
