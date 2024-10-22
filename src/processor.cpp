@@ -19,29 +19,45 @@ int main(){
 int runProgramm(){
     Stack* stk = stackCtor(0);
     FILE* fp = fopen("./exe_cmds.txt", "r");
-    int cmd = 0;
     int ip = 0;
+
     int cmds[MAX_CMDS_SIZE] = {};
     int registers[MAX_REGISTERS_AMOUNT] = {};
+    int RAM[MAX_RAM_SIZE] = {};
 
     readFile(fp, cmds);
 
     while (1){
-        cmd = cmds[ip++];
+        int cmd = cmds[ip++];
+        int cmd_masked = cmd & 31;
+        if (cmd == HLT){
+            cmd_masked = HLT;
+        }
 
-        switch(cmd){
+        switch(cmd_masked){
             case(HLT):{
                 return 0;
             }
             case(PUSH):{
-                int value = cmds[ip++];
+                if ((cmd & PUSH_IMMED) && (cmd & PUSH_REG)){
+                    int value_i = cmds[ip++];
+                    int value_r = registers[cmds[ip++]];
 
-                stackPush(stk, value);
-                continue;
-            }
-            case(PUSHR):{
-                stackPush(stk, registers[cmds[ip++]]);
-                continue;
+                    stackPush(stk, value_i + value_r);
+                    continue;
+                }
+                if (cmd & PUSH_IMMED){
+                    int value_i = cmds[ip++];
+
+                    stackPush(stk, value_i);
+                    continue;
+                }
+                if (cmd & PUSH_REG){
+                    int value_r = registers[cmds[ip++]];
+
+                    stackPush(stk, value_r);
+                    continue;
+                }
             }
             case(POP):{
                 int value = 0;
@@ -191,7 +207,7 @@ int readFile(FILE* fp, int* cmds){
         fscanf(fp, "%d", &cmd);
         cmds[ip++] = cmd;
 
-        if (cmds[ip - 1] == HLT){
+        if (cmds[ip - 1] == END_OF_CMDS){
             break;
         }
     }

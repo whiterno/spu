@@ -1,20 +1,25 @@
 push 0
 pop AX
 
-next:
-
-pushr AX
-pushr AX
+push AX
+push AX
 mult
 out
 
-pushr AX
+push AX
 push 1
 add
 pop AX
 
-pushr AX
-push 10
+push AX
+push 16
 jbe next:
+
+hlt
+
+next:
+
+push 100
+out
 
 hlt

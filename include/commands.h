@@ -2,9 +2,9 @@
 #define COMMANDS_H
 
 enum Commands{
+    END_OF_CMDS = -2,
     HLT = -1,
     PUSH,
-    PUSHR,
     POP,
     ADD,
     SUB,
@@ -19,6 +19,12 @@ enum Commands{
     JBE,
     JE,
     JNE
+};
+
+enum PushBits{
+    PUSH_IMMED = 128,
+    PUSH_REG   = 64,
+    PUSH_MEM   = 32
 };
 
 const int MAX_CMDS_SIZE = 512;

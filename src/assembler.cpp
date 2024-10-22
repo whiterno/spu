@@ -12,6 +12,8 @@ static void initCmds(int cmds[]);
 static void initExeFile(int cmds[]);
 static void goThroughFixupLabels(Label labels[], int cmds[]);
 static void pasteAdressArg(Label labels[], int* cmds, int* ip, FILE* inter_cmds);
+static int ifRegister(const char* str);
+static int getArg(const char* input_line, int cmds[], int ip);
 
 int main(){
     int cmds[MAX_CMDS_SIZE] = {};
@@ -38,30 +40,25 @@ static void initCmds(int cmds[]){
     labelsCtor(fixup_labels);
 
     while (1){
-        fscanf(inter_cmds, "%s", cmd);
+        if (fscanf(inter_cmds, "%s", cmd) == EOF){
+            break;
+        }
 
         if (strcmp(cmd, "push") == 0){
-            int arg = 0;
+            char input_line[30] = {};
+            fscanf(inter_cmds, "%[^\n]\n", input_line);
 
-            fscanf(inter_cmds, "%d", &arg);
-
-            cmds[ip++] = PUSH;
-            cmds[ip++] = arg;
-            continue;
-        }
-        if (strcmp(cmd, "pushr") == 0){
-            char reg_name[3] = {};
-
-            fscanf(inter_cmds, "%s", reg_name);
-
-            cmds[ip++] = PUSHR;
-            cmds[ip++] = reg_name[0] - 'A' + 1;
+            ip = getArg(input_line, cmds, ip);
             continue;
         }
         if (strcmp(cmd, "pop") == 0){
             char reg_name[MAX_REGISTER_SIZE] = {};
 
             fscanf(inter_cmds, "%s", reg_name);
+            if (!ifRegister(reg_name)){
+                printf("Error: not a register name\n");
+                assert(NULL);
+            }
 
             cmds[ip++] = POP;
             cmds[ip++] = reg_name[0] - 'A' + 1;
@@ -128,7 +125,7 @@ static void initCmds(int cmds[]){
         }
         if (strcmp(cmd, "hlt") == 0){
             cmds[ip++] = HLT;
-            break;
+            continue;
         }
         if (strchr(cmd, ':') != NULL){
             char label_name[MAX_LABEL_NAME_SIZE] = {};
@@ -148,6 +145,8 @@ static void initCmds(int cmds[]){
         assert(NULL);
     }
 
+    cmds[ip] = END_OF_CMDS;
+
     fclose(inter_cmds);
     goThroughFixupLabels(fixup_labels, cmds);
     labelsDtor(fixup_labels);
@@ -161,13 +160,22 @@ static void initExeFile(int cmds[]){
     int ip = 0;
 
     while (1){
-        if (cmds[ip] == PUSH || cmds[ip] == PUSH || cmds[ip] == POP || cmds[ip] == PUSHR || cmds[ip] == JMP || cmds[ip] == JA || cmds[ip] == JAE || cmds[ip] == JB || cmds[ip] == JBE || cmds[ip] == JE || cmds[ip] == JNE){
+        int cmds_two[11] = {PUSH | 128, PUSH | 64, (PUSH | 128) | 64, POP, JMP, JA, JAE, JB, JBE, JE, JNE};
+        int stop_flag = 1;
+
+        for (int cmd = 0; cmd < 11; cmd++){
+            if (cmds_two[cmd] == cmds[ip]){
+                stop_flag = 0;
+            }
+        }
+
+        if (!stop_flag){
             fprintf(exe_cmds, "%d ", cmds[ip++]);
             fprintf(exe_cmds, "%d\n", cmds[ip++]);
             continue;
         }
         fprintf(exe_cmds, "%d\n", cmds[ip++]);
-        if (cmds[ip - 1] == HLT){
+        if (cmds[ip - 1] == END_OF_CMDS){
             break;
         }
     }
@@ -194,4 +202,50 @@ static void pasteAdressArg(Label labels[], int* cmds, int* ip, FILE* inter_cmds)
     int label_adress = findLabelAdress(labels, label_name, *ip);
 
     cmds[(*ip)++] = label_adress;
+}
+
+static int ifRegister(const char* str){
+    if ((strcmp(str, "AX") == 0) || (strcmp(str, "BX") == 0) || (strcmp(str, "CX") == 0) || (strcmp(str, "DX") == 0)){
+        return 1;
+    }
+
+    return 0;
+}
+
+static int getArg(const char* input_line, int cmds[], int ip){
+    int arg = 0;
+    char reg_name[MAX_REGISTER_SIZE] = {};
+    int push_type = PUSH;
+
+    if (sscanf(input_line, "%s + %d", reg_name, &arg) == 2 || sscanf(input_line, "push %d + %s", &arg, reg_name) == 2){
+        if (!ifRegister(reg_name)){
+            printf("Error: not a register name\n");
+            assert(NULL);
+        }
+
+        cmds[ip++] = (push_type | PUSH_IMMED) | PUSH_REG;
+        cmds[ip++] = arg;
+        cmds[ip++] = reg_name[0] - 'A' + 1;
+
+        return ip;
+    }
+    if (sscanf(input_line, "%d", &arg) == 1){
+        cmds[ip++] = push_type | PUSH_IMMED;
+        cmds[ip++] = arg;
+
+        return ip;
+    }
+    if (sscanf(input_line, "%s", reg_name) == 1){
+        if (!ifRegister(reg_name)){
+            printf("Error: not a register name\n");
+            assert(NULL);
+        }
+
+        cmds[ip++] = push_type | PUSH_REG;
+        cmds[ip++] = reg_name[0] - 'A' + 1;
+
+        return ip;
+    }
+
+    return 0;
 }
