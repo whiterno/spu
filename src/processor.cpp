@@ -6,8 +6,10 @@
 #include "../include/commands.h"
 #include "../include/processor.h"
 
-int runProgramm();
-int readFile(FILE* fp, int* cmds);
+static int runProgramm();
+static int readFile(FILE* fp, int* cmds);
+static int push(Stack* stk, int* cmds, int* RAM, int* registers, int ip);
+static int pop(Stack* stk, int* cmds, int* RAM, int* registers, int ip);
 
 
 int main(){
@@ -16,21 +18,21 @@ int main(){
     return 0;
 }
 
-int runProgramm(){
-    Stack* stk = stackCtor(0);
+static int runProgramm(){
+    Stack* stk = stackCtor(INIT(stk) 0);
     FILE* fp = fopen("./exe_cmds.txt", "r");
     int ip = 0;
 
     int cmds[MAX_CMDS_SIZE] = {};
-    int registers[MAX_REGISTERS_AMOUNT] = {};
-    int RAM[MAX_RAM_SIZE] = {};
+    int registers[REGISTERS_AMOUNT] = {};
+    int RAM[RAM_SIZE] = {};
 
     readFile(fp, cmds);
 
     while (1){
         int cmd = cmds[ip++];
         int cmd_masked = cmd & 31;
-        if (cmd == HLT){
+        if (cmd == HLT || cmd == END_OF_CMDS){
             cmd_masked = HLT;
         }
 
@@ -39,31 +41,11 @@ int runProgramm(){
                 return 0;
             }
             case(PUSH):{
-                if ((cmd & PUSH_IMMED) && (cmd & PUSH_REG)){
-                    int value_i = cmds[ip++];
-                    int value_r = registers[cmds[ip++]];
-
-                    stackPush(stk, value_i + value_r);
-                    continue;
-                }
-                if (cmd & PUSH_IMMED){
-                    int value_i = cmds[ip++];
-
-                    stackPush(stk, value_i);
-                    continue;
-                }
-                if (cmd & PUSH_REG){
-                    int value_r = registers[cmds[ip++]];
-
-                    stackPush(stk, value_r);
-                    continue;
-                }
+                ip = push(stk, cmds, RAM, registers, ip);
+                continue;
             }
             case(POP):{
-                int value = 0;
-
-                stackPop(stk, &value);
-                registers[cmds[ip++]] = value;
+                ip = pop(stk, cmds, RAM, registers, ip);
                 continue;
             }
             case(ADD):{
@@ -130,6 +112,9 @@ int runProgramm(){
                 if (value1 > value2){
                     ip = cmds[ip];
                 }
+                else{
+                    ip++;
+                }
                 continue;
             }
             case(JAE):{
@@ -141,6 +126,9 @@ int runProgramm(){
 
                 if (value1 >= value2){
                     ip = cmds[ip];
+                }
+                else{
+                    ip++;
                 }
                 continue;
             }
@@ -154,6 +142,9 @@ int runProgramm(){
                 if (value1 < value2){
                     ip = cmds[ip];
                 }
+                else{
+                    ip++;
+                }
                 continue;
             }
             case(JBE):{
@@ -165,6 +156,9 @@ int runProgramm(){
 
                 if (value1 <= value2){
                     ip = cmds[ip];
+                }
+                else{
+                    ip++;
                 }
                 continue;
             }
@@ -178,6 +172,9 @@ int runProgramm(){
                 if (value1 == value2){
                     ip = cmds[ip];
                 }
+                else{
+                    ip++;
+                }
                 continue;
             }
             case(JNE):{
@@ -190,13 +187,24 @@ int runProgramm(){
                 if (value1 != value2){
                     ip = cmds[ip];
                 }
+                else{
+                    ip++;
+                }
                 continue;
+            }
+            case(DRAW):{
+                for (int row = 0; row < VIDEO_MEM_ROWS; row++){
+                    for (int col = 0; col < VIDEO_MEM_COLS; col++){
+                        printf(" %c", RAM[col + row * VIDEO_MEM_ROWS]);
+                    }
+                    printf("\n");
+                }
             }
         }
     }
 }
 
-int readFile(FILE* fp, int* cmds){
+static int readFile(FILE* fp, int* cmds){
     assert(fp);
     assert(cmds);
 
@@ -214,3 +222,101 @@ int readFile(FILE* fp, int* cmds){
 
     return 0;
 }
+
+static int push(Stack* stk, int* cmds, int* RAM, int* registers, int ip){
+    assert(stk);
+    assert(cmds);
+    assert(RAM);
+    assert(registers);
+
+    int cmd = cmds[ip - 1];
+
+    if ((cmd & IMMED) && (cmd & REG)){
+        int value_i = cmds[ip++];
+        int value_r = registers[cmds[ip++]];
+
+        if(cmd & MEM){
+            stackPush(stk, RAM[value_i + value_r]);
+
+            return ip;
+        }
+        stackPush(stk, value_i + value_r);
+
+        return ip;
+    }
+    if (cmd & IMMED){
+        int value_i = cmds[ip++];
+
+        if(cmd & MEM){
+            stackPush(stk, RAM[value_i]);
+
+            return ip;
+        }
+        stackPush(stk, value_i);
+
+        return ip;
+    }
+    if (cmd & REG){
+        int value_r = registers[cmds[ip++]];
+
+        if(cmd & MEM){
+            stackPush(stk, RAM[value_r]);
+
+            return ip;
+        }
+        stackPush(stk, value_r);
+
+        return ip;
+    }
+
+    return ip;
+}
+
+static int pop(Stack* stk, int* cmds, int* RAM, int* registers, int ip){
+    assert(stk);
+    assert(cmds);
+    assert(RAM);
+    assert(registers);
+
+    int cmd = cmds[ip - 1];
+
+    if ((cmd & IMMED) && (cmd & REG)){
+        int value_i = cmds[ip++];
+        int value_r = registers[cmds[ip++]];
+        int value_ram = 0;
+
+        stackPop(stk, &value_ram);
+        RAM[value_i + value_r] = value_ram;
+
+        return ip;
+    }
+    if (cmd & IMMED){
+        int value_i = cmds[ip++];
+        int value_ram = 0;
+
+        stackPop(stk, &value_ram);
+        RAM[value_i] = value_ram;
+
+        return ip;
+    }
+    if ((cmd & REG) && ((cmd & MEM) == 0)){
+        int value = 0;
+
+        stackPop(stk, &value);
+        registers[cmds[ip++]] = value;
+
+        return ip;
+    }
+    if ((cmd & REG)){
+        int value_ram = 0;
+
+        stackPop(stk, &value_ram);
+        RAM[registers[cmds[ip++]]] = value_ram;
+
+        return ip;
+    }
+
+    return ip;
+
+}
+

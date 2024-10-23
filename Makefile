@@ -18,7 +18,7 @@ obj/processor.o: src/processor.cpp ${Headers}
 run:
 	exe/processor.out
 
-obj/stack.o: ${Headers}
+obj/stack.o: lib/stack/stack_hcpp/stack.cpp lib/stack/stack_hcpp/stack.h
 	g++ -c lib/stack/stack_hcpp/stack.cpp -o obj/stack.o
 
 obj/labels.o: src/labels.cpp ${Headers}

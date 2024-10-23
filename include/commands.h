@@ -18,13 +18,14 @@ enum Commands{
     JB,
     JBE,
     JE,
-    JNE
+    JNE,
+    DRAW
 };
 
-enum PushBits{
-    PUSH_IMMED = 128,
-    PUSH_REG   = 64,
-    PUSH_MEM   = 32
+enum Bits{
+    IMMED = 128,
+    REG   = 64,
+    MEM   = 32
 };
 
 const int MAX_CMDS_SIZE = 512;
