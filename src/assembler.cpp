@@ -8,12 +8,23 @@
 #include "../include/labels.h"
 
 static void runProgramm(int cmds[]);
+
 static void initCmds(int cmds[]);
 static void initExeFile(int cmds[]);
+
+static int setLabel(Label* fixup_labels, char* cmd, int ip);
 static void goThroughFixupLabels(Label labels[], int cmds[]);
 static void pasteAdressArg(Label labels[], int* cmds, int* ip, FILE* inter_cmds);
-static int ifRegister(const char* str);
+
 static int getArg(const char* input_line, int cmds[], int ip);
+static int getArgSD(int* cmds, char* reg_name, int cmd_type, int arg, int ip);
+static int getArgD(int* cmds, int cmd_type, int arg, int ip);
+static int getArgS(int* cmds, char* reg_name, int cmd_type, int ip);
+static int setArg(FILE* inter_cmds, int* cmds, Label* fixup_labels, int ip, int type);
+static int setArgPushPop(FILE* inter_cmds, int* cmds, int ip, int type);
+static int ifRegister(const char* str);
+
+
 
 int main(){
     int cmds[MAX_CMDS_SIZE] = {};
@@ -24,11 +35,15 @@ int main(){
 }
 
 static void runProgramm(int cmds[]){
+    assert(cmds);
+
     initCmds(cmds);
     initExeFile(cmds);
 }
 
 static void initCmds(int cmds[]){
+    assert(cmds);
+
     FILE* inter_cmds = fopen("./inter_cmds.asm", "r");
     if (inter_cmds== NULL){
         assert(NULL);
@@ -39,130 +54,28 @@ static void initCmds(int cmds[]){
     Label fixup_labels[MAX_LABELS_AMOUNT] = {};
     labelsCtor(fixup_labels);
 
+    #define DEF_CMD_(name, num, ...)                            \
+        if (strcmp(cmd, #name) == 0){                           \
+        ip = setArg(inter_cmds, cmds, fixup_labels, ip, name);  \
+        continue;                                               \
+    }
+
     while (1){
         if (fscanf(inter_cmds, "%s", cmd) == EOF){
             break;
         }
 
-        if (strcmp(cmd, "push") == 0){
-            int cmd_ip = ip - 1;
-            char input_line[30] = {};
-            fscanf(inter_cmds, "%[^\n]\n", input_line);
+        #include "../include/cmds_gen.h"
 
-            if (strchr(input_line, '[') != NULL){
-                ip = getArg(strchr(input_line, '[') + 1, cmds, ip);
-                cmds[cmd_ip] |= PUSH;
-                continue;
-            }
-
-            ip = getArg(input_line, cmds, ip);
-            cmds[cmd_ip] |= PUSH;
-            continue;
-        }
-        if (strcmp(cmd, "pop") == 0){
-            int cmd_ip = ip;
-            char input_line[30] = {};
-            fscanf(inter_cmds, "%[^\n]\n", input_line);
-
-            if (strchr(input_line, '[') != NULL){
-                ip = getArg(strchr(input_line, '[') + 1, cmds, ip);
-
-                if ((cmds[cmd_ip] & IMMED) && ((cmds[cmd_ip] & MEM) == 0)){
-                    printf("Error: constant in pop\n");
-                    assert(NULL);
-                }
-                cmds[cmd_ip] |= POP;
-                continue;
-            }
-
-            ip = getArg(input_line, cmds, ip);
-            cmds[cmd_ip] |= POP;
-            continue;
-        }
-        if (strcmp(cmd, "add") == 0){
-            cmds[ip++] = ADD;
-            continue;
-        }
-        if (strcmp(cmd, "sub") == 0){
-            cmds[ip++] = SUB;
-            continue;
-        }
-        if (strcmp(cmd, "div") == 0){
-            cmds[ip++] = DIV;
-            continue;
-        }
-        if (strcmp(cmd, "mult") == 0){
-            cmds[ip++] = MULT;
-            continue;
-        }
-        if (strcmp(cmd, "in") == 0){
-            cmds[ip++] = IN;
-            continue;
-        }
-        if (strcmp(cmd, "out") == 0){
-            cmds[ip++] = OUT;
-            continue;
-        }
-        if (strcmp(cmd, "jmp") == 0){
-            cmds[ip++] = JMP;
-            pasteAdressArg(fixup_labels, cmds, &ip, inter_cmds);
-            continue;
-        }
-        if (strcmp(cmd, "ja") == 0){
-            cmds[ip++] = JA;
-            pasteAdressArg(fixup_labels, cmds, &ip, inter_cmds);
-            continue;
-        }
-        if (strcmp(cmd, "jae") == 0){
-            cmds[ip++] = JAE;
-            pasteAdressArg(fixup_labels, cmds, &ip, inter_cmds);
-            continue;
-        }
-        if (strcmp(cmd, "jb") == 0){
-            cmds[ip++] = JB;
-            pasteAdressArg(fixup_labels, cmds, &ip, inter_cmds);
-            continue;
-        }
-        if (strcmp(cmd, "jbe") == 0){
-            cmds[ip++] = JBE;
-            pasteAdressArg(fixup_labels, cmds, &ip, inter_cmds);
-            continue;
-        }
-        if (strcmp(cmd, "je") == 0){
-            cmds[ip++] = JE;
-            pasteAdressArg(fixup_labels, cmds, &ip, inter_cmds);
-            continue;
-        }
-        if (strcmp(cmd, "jne") == 0){
-            cmds[ip++] = JNE;
-            pasteAdressArg(fixup_labels, cmds, &ip, inter_cmds);
-            continue;
-        }
-        if (strcmp(cmd, "hlt") == 0){
-            cmds[ip++] = HLT;
-            continue;
-        }
-        if (strcmp(cmd, "draw") == 0){
-            cmds[ip++] = DRAW;
-            continue;
-        }
         if (strchr(cmd, ':') != NULL){
-            char label_name[MAX_LABEL_NAME_SIZE] = {};
-            strcpy(label_name, cmd);
-            int err = initLabelAdress(fixup_labels, label_name, ip);
-            if (err == EXCEEDED_MAX_LABELS_AMOUNT){
-                printf("Error: exceeded max labels amount\n");
-                assert(NULL);
-            }
-            if (err == DOUBLE_INIT){
-                printf("Error: double label initialization\n");
-                assert(NULL);
-            }
+            setLabel(fixup_labels, cmd, ip);
             continue;
         }
         printf("Syntax error: %s\n", cmd);
         assert(NULL);
     }
+
+    #undef DEF_CMD_
 
     cmds[ip] = END_OF_CMDS;
 
@@ -227,40 +140,108 @@ static int getArg(const char* input_line, int cmds[], int ip){
     }
 
     if (sscanf(input_line, "%s + %d", reg_name, &arg) == 2 || sscanf(input_line, "%d + %s", &arg, reg_name) == 2){
-        if (reg_name[2] == ']'){
-            reg_name[2] = '\0';
-        }
-        if (!ifRegister(reg_name)){
-            printf("Error: not a register name\n");
-            assert(NULL);
-        }
-
-        cmds[ip++] = (cmd_type | IMMED) | REG;
-        cmds[ip++] = arg;
-        cmds[ip++] = reg_name[0] - 'A' + 1;
-
-        return ip;
+        return getArgSD(cmds, reg_name, cmd_type, arg, ip);
     }
     if (sscanf(input_line, "%d", &arg) == 1){
-        cmds[ip++] = cmd_type | IMMED;
-        cmds[ip++] = arg;
-
-        return ip;
+        return getArgD(cmds, cmd_type, arg, ip);
     }
     if (sscanf(input_line, "%s", reg_name) == 1){
-        if (reg_name[2] == ']'){
-            reg_name[2] = '\0';
-        }
-        if (!ifRegister(reg_name)){
-            printf("Error: not a register name\n");
-            assert(NULL);
-        }
+        return getArgS(cmds, reg_name, cmd_type, ip);
+    }
 
-        cmds[ip++] = cmd_type | REG;
-        cmds[ip++] = reg_name[0] - 'A' + 1;
+    return ip;
+}
+
+static int setArg(FILE* inter_cmds, int* cmds, Label* fixup_labels, int ip, int type){
+    if (type == PUSH || type == POP){
+        return setArgPushPop(inter_cmds, cmds, ip, type);
+    }
+    else if (type >= JMP && type <= JNE){
+        cmds[ip++] = type;
+        pasteAdressArg(fixup_labels, cmds, &ip, inter_cmds);
 
         return ip;
     }
+    else {
+        cmds[ip++] = type;
+
+        return ip;
+    }
+}
+
+static int setLabel(Label* fixup_labels, char* cmd, int ip){
+    char label_name[MAX_LABEL_NAME_SIZE] = {};
+    strcpy(label_name, cmd);
+    int err = initLabelAdress(fixup_labels, label_name, ip);
+    if (err == EXCEEDED_MAX_LABELS_AMOUNT){
+        printf("Error: exceeded max labels amount\n");
+        assert(NULL);
+    }
+    if (err == DOUBLE_INIT){
+        printf("Error: double label initialization\n");
+        assert(NULL);
+    }
+
+    return 0;
+}
+
+static int getArgSD(int* cmds, char* reg_name, int cmd_type, int arg, int ip){
+    if (reg_name[2] == ']'){
+        reg_name[2] = '\0';
+    }
+    if (!ifRegister(reg_name)){
+        printf("Error: not a register name\n");
+        assert(NULL);
+    }
+
+    cmds[ip++] = (cmd_type | IMMED) | REG;
+    cmds[ip++] = arg;
+    cmds[ip++] = reg_name[0] - 'A' + 1;
+
+    return ip;
+}
+
+static int getArgD(int* cmds, int cmd_type, int arg, int ip){
+    cmds[ip++] = cmd_type | IMMED;
+    cmds[ip++] = arg;
+
+    return ip;
+}
+
+static int getArgS(int* cmds, char* reg_name, int cmd_type, int ip){
+    if (reg_name[2] == ']'){
+        reg_name[2] = '\0';
+    }
+    if (!ifRegister(reg_name)){
+        printf("Error: not a register name\n");
+        assert(NULL);
+    }
+
+    cmds[ip++] = cmd_type | REG;
+    cmds[ip++] = reg_name[0] - 'A' + 1;
+
+    return ip;
+}
+
+static int setArgPushPop(FILE* inter_cmds, int* cmds, int ip, int type){
+    int cmd_ip = ip;
+    char input_line[30] = {};
+    fscanf(inter_cmds, "%[^\n]\n", input_line);
+
+    if (strchr(input_line, '[') != NULL){
+        ip = getArg(strchr(input_line, '[') + 1, cmds, ip);
+
+        if ((cmds[cmd_ip] & IMMED) && ((cmds[cmd_ip] & MEM) == 0) && type == POP){
+            printf("Error: constant in pop\n");
+            assert(NULL);
+        }
+        cmds[cmd_ip] |= type;
+
+        return ip;
+    }
+
+    ip = getArg(input_line, cmds, ip);
+    cmds[cmd_ip] |= type;
 
     return ip;
 }

@@ -1,4 +1,4 @@
-Headers := include/assembler.h include/commands.h include/disassembler.h include/labels.h include/processor.h
+Headers := include/assembler.h include/commands.h include/disassembler.h include/labels.h include/processor.h include/cmds_gen.h
 
 .PHONY: assembly compile run all
 

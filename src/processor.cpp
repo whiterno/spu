@@ -8,9 +8,8 @@
 
 static int runProgramm();
 static int readFile(FILE* fp, int* cmds);
-static int push(Stack* stk, int* cmds, int* RAM, int* registers, int ip);
-static int pop(Stack* stk, int* cmds, int* RAM, int* registers, int ip);
-
+static int push(Processor* prc);
+static int pop(Processor* prc);
 
 int main(){
     runProgramm();
@@ -19,189 +18,29 @@ int main(){
 }
 
 static int runProgramm(){
-    Stack* stk = stackCtor(INIT(stk) 0);
+    Processor prc = {.stk = stackCtor(INIT(stk) 0), .cmds = {}, .registers = {}, .RAM = {}, .ip = 0};
     FILE* fp = fopen("./exe_cmds.txt", "r");
-    int ip = 0;
 
-    int cmds[MAX_CMDS_SIZE] = {};
-    int registers[REGISTERS_AMOUNT] = {};
-    int RAM[RAM_SIZE] = {};
+    readFile(fp, prc.cmds);
 
-    readFile(fp, cmds);
+    #define DEF_CMD_(name, num, ...)                \
+    case(name):{                                    \
+        __VA_ARGS__                                 \
+    }
 
     while (1){
-        int cmd = cmds[ip++];
+        int cmd = prc.cmds[prc.ip++];
         int cmd_masked = cmd & 31;
         if (cmd == HLT || cmd == END_OF_CMDS){
             cmd_masked = HLT;
         }
 
         switch(cmd_masked){
-            case(HLT):{
-                return 0;
-            }
-            case(PUSH):{
-                ip = push(stk, cmds, RAM, registers, ip);
-                continue;
-            }
-            case(POP):{
-                ip = pop(stk, cmds, RAM, registers, ip);
-                continue;
-            }
-            case(ADD):{
-                int value1 = 0;
-                int value2 = 0;
-
-                stackPop(stk, &value1);
-                stackPop(stk, &value2);
-                stackPush(stk, value1 + value2);
-                continue;
-            }
-            case(SUB):{
-                int value1 = 0;
-                int value2 = 0;
-
-                stackPop(stk, &value1);
-                stackPop(stk, &value2);
-                stackPush(stk, value2 - value1);
-                continue;
-            }
-            case(MULT):{
-                int value1 = 0;
-                int value2 = 0;
-
-                stackPop(stk, &value1);
-                stackPop(stk, &value2);
-                stackPush(stk, value1 * value2);
-                continue;
-            }
-            case(DIV):{
-                int value1 = 0;
-                int value2 = 0;
-
-                stackPop(stk, &value1);
-                stackPop(stk, &value2);
-                stackPush(stk, value2 / value1);
-                continue;
-            }
-            case(IN):{
-                int value = 0;
-
-                scanf("%d", &value);
-                stackPush(stk, value);
-                continue;
-            }
-            case(OUT):{
-                int value = 0;
-
-                stackPop(stk, &value);
-                printf("%d\n", value);
-                continue;
-            }
-            case(JMP):{
-                ip = cmds[ip];
-                continue;
-            }
-            case(JA):{
-                int value1 = 0;
-                int value2 = 0;
-
-                stackPop(stk, &value2);
-                stackPop(stk, &value1);
-
-                if (value1 > value2){
-                    ip = cmds[ip];
-                }
-                else{
-                    ip++;
-                }
-                continue;
-            }
-            case(JAE):{
-                int value1 = 0;
-                int value2 = 0;
-
-                stackPop(stk, &value2);
-                stackPop(stk, &value1);
-
-                if (value1 >= value2){
-                    ip = cmds[ip];
-                }
-                else{
-                    ip++;
-                }
-                continue;
-            }
-            case(JB):{
-                int value1 = 0;
-                int value2 = 0;
-
-                stackPop(stk, &value2);
-                stackPop(stk, &value1);
-
-                if (value1 < value2){
-                    ip = cmds[ip];
-                }
-                else{
-                    ip++;
-                }
-                continue;
-            }
-            case(JBE):{
-                int value1 = 0;
-                int value2 = 0;
-
-                stackPop(stk, &value2);
-                stackPop(stk, &value1);
-
-                if (value1 <= value2){
-                    ip = cmds[ip];
-                }
-                else{
-                    ip++;
-                }
-                continue;
-            }
-            case(JE):{
-                int value1 = 0;
-                int value2 = 0;
-
-                stackPop(stk, &value2);
-                stackPop(stk, &value1);
-
-                if (value1 == value2){
-                    ip = cmds[ip];
-                }
-                else{
-                    ip++;
-                }
-                continue;
-            }
-            case(JNE):{
-                int value1 = 0;
-                int value2 = 0;
-
-                stackPop(stk, &value2);
-                stackPop(stk, &value1);
-
-                if (value1 != value2){
-                    ip = cmds[ip];
-                }
-                else{
-                    ip++;
-                }
-                continue;
-            }
-            case(DRAW):{
-                for (int row = 0; row < VIDEO_MEM_ROWS; row++){
-                    for (int col = 0; col < VIDEO_MEM_COLS; col++){
-                        printf(" %c", RAM[col + row * VIDEO_MEM_ROWS]);
-                    }
-                    printf("\n");
-                }
-            }
+            #include "../include/cmds_gen.h"
         }
     }
+
+    #undef DEF_CMD_
 }
 
 static int readFile(FILE* fp, int* cmds){
@@ -223,100 +62,94 @@ static int readFile(FILE* fp, int* cmds){
     return 0;
 }
 
-static int push(Stack* stk, int* cmds, int* RAM, int* registers, int ip){
-    assert(stk);
-    assert(cmds);
-    assert(RAM);
-    assert(registers);
+static int push(Processor* prc){
+    assert(prc);
 
-    int cmd = cmds[ip - 1];
+    int cmd = prc->cmds[prc->ip - 1];
 
     if ((cmd & IMMED) && (cmd & REG)){
-        int value_i = cmds[ip++];
-        int value_r = registers[cmds[ip++]];
+        int value_i = prc->cmds[prc->ip++];
+        int value_r = prc->registers[prc->cmds[prc->ip++]];
 
         if(cmd & MEM){
-            stackPush(stk, RAM[value_i + value_r]);
+            stackPush(prc->stk, prc->RAM[value_i + value_r]);
 
-            return ip;
+            return prc->ip;
         }
-        stackPush(stk, value_i + value_r);
+        stackPush(prc->stk, value_i + value_r);
 
-        return ip;
+        return prc->ip;
     }
     if (cmd & IMMED){
-        int value_i = cmds[ip++];
+        int value_i = prc->cmds[prc->ip++];
 
         if(cmd & MEM){
-            stackPush(stk, RAM[value_i]);
+            stackPush(prc->stk, prc->RAM[value_i]);
 
-            return ip;
+            return prc->ip;
         }
-        stackPush(stk, value_i);
+        stackPush(prc->stk, value_i);
 
-        return ip;
+        return prc->ip;
     }
     if (cmd & REG){
-        int value_r = registers[cmds[ip++]];
+        int value_r = prc->registers[prc->cmds[prc->ip++]];
 
         if(cmd & MEM){
-            stackPush(stk, RAM[value_r]);
+            stackPush(prc->stk, prc->RAM[value_r]);
 
-            return ip;
+            return prc->ip;
         }
-        stackPush(stk, value_r);
+        stackPush(prc->stk, value_r);
 
-        return ip;
+        return prc->ip;
     }
 
-    return ip;
+    return prc->ip;
 }
 
-static int pop(Stack* stk, int* cmds, int* RAM, int* registers, int ip){
-    assert(stk);
-    assert(cmds);
-    assert(RAM);
-    assert(registers);
+static int pop(Processor* prc){
+    assert(prc);
 
-    int cmd = cmds[ip - 1];
+    int cmd = prc->cmds[prc->ip - 1];
 
     if ((cmd & IMMED) && (cmd & REG)){
-        int value_i = cmds[ip++];
-        int value_r = registers[cmds[ip++]];
+        int value_i = prc->cmds[prc->ip++];
+        int value_r = prc->registers[prc->cmds[prc->ip++]];
         int value_ram = 0;
 
-        stackPop(stk, &value_ram);
-        RAM[value_i + value_r] = value_ram;
+        stackPop(prc->stk, &value_ram);
+        prc->RAM[value_i + value_r] = value_ram;
 
-        return ip;
+        return prc->ip;
     }
     if (cmd & IMMED){
-        int value_i = cmds[ip++];
+        int value_i = prc->cmds[prc->ip++];
         int value_ram = 0;
 
-        stackPop(stk, &value_ram);
-        RAM[value_i] = value_ram;
+        stackPop(prc->stk, &value_ram);
+        prc->RAM[value_i] = value_ram;
 
-        return ip;
+        return prc->ip;
     }
     if ((cmd & REG) && ((cmd & MEM) == 0)){
         int value = 0;
 
-        stackPop(stk, &value);
-        registers[cmds[ip++]] = value;
+        stackPop(prc->stk, &value);
+        prc->registers[prc->cmds[prc->ip++]] = value;
 
-        return ip;
+        return prc->ip;
     }
     if ((cmd & REG)){
         int value_ram = 0;
 
-        stackPop(stk, &value_ram);
-        RAM[registers[cmds[ip++]]] = value_ram;
+        stackPop(prc->stk, &value_ram);
+        prc->RAM[prc->registers[prc->cmds[prc->ip++]]] = value_ram;
 
-        return ip;
+        return prc->ip;
     }
 
-    return ip;
+    return prc->ip;
 
 }
 

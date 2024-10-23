@@ -1,101 +1,101 @@
-push 0
-push 0
-pop AX
-pop BX
+PUSH 0
+PUSH 0
+POP AX
+POP BX
 
-first:
+FIRST:
 
-    push AX
-    push -15
-    add
-    push AX
-    push -15
-    add
-    mult
-    push BX
-    push -15
-    add
-    push BX
-    push -15
-    add
-    mult
-    add
-    push 25
-    ja next:
+    PUSH AX
+    PUSH -15
+    ADD
+    PUSH AX
+    PUSH -15
+    ADD
+    MULT
+    PUSH BX
+    PUSH -15
+    ADD
+    PUSH BX
+    PUSH -15
+    ADD
+    MULT
+    ADD
+    PUSH 25
+    JA NEXT:
 
-        push 42
-        push BX
-        push 30
-        mult
-        pop CX
-        push AX
-        push CX
-        add
-        pop CX
-        pop [CX]
+        PUSH 42
+        PUSH BX
+        PUSH 30
+        MULT
+        POP CX
+        PUSH AX
+        PUSH CX
+        ADD
+        POP CX
+        POP [CX]
 
-    next:
+    NEXT:
 
-    push AX
-    push -15
-    add
-    push AX
-    push -15
-    add
-    mult
-    push BX
-    push -15
-    add
-    push BX
-    push -15
-    add
-    mult
-    add
-    push 25
-    jbe elsenext:
+    PUSH AX
+    PUSH -15
+    ADD
+    PUSH AX
+    PUSH -15
+    ADD
+    MULT
+    PUSH BX
+    PUSH -15
+    ADD
+    PUSH BX
+    PUSH -15
+    ADD
+    MULT
+    ADD
+    PUSH 25
+    JBE ELSENEXT:
 
-        push 46
-        push BX
-        push 30
-        mult
-        pop CX
-        push AX
-        push CX
-        add
-        pop CX
-        pop [CX]
+        PUSH 46
+        PUSH BX
+        PUSH 30
+        MULT
+        POP CX
+        PUSH AX
+        PUSH CX
+        ADD
+        POP CX
+        POP [CX]
 
-    elsenext:
+    ELSENEXT:
 
-    push 1
-    push AX
-    add
-    pop AX
+    PUSH 1
+    PUSH AX
+    ADD
+    POP AX
 
-    push AX
-    push 30
-    jne if1:
+    PUSH AX
+    PUSH 30
+    JNE IF1:
 
-        push 1
-        push BX
-        add
-        pop BX
+        PUSH 1
+        PUSH BX
+        ADD
+        POP BX
 
-        push 0
-        pop AX
+        PUSH 0
+        POP AX
 
-    if1:
+    IF1:
 
-    push BX
-    push 30
-    mult
-    pop CX
-    push AX
-    push CX
-    add
-    push 900
-    jb first:
+    PUSH BX
+    PUSH 30
+    MULT
+    POP CX
+    PUSH AX
+    PUSH CX
+    ADD
+    PUSH 900
+    JB FIRST:
 
-draw
+DRAW
 
-hlt
+HLT

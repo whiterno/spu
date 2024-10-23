@@ -1,25 +1,10 @@
 #ifndef COMMANDS_H
 #define COMMANDS_H
 
+#define DEF_CMD_(name, num, ...) name = num,
 enum Commands{
     END_OF_CMDS = -2,
-    HLT = -1,
-    PUSH,
-    POP,
-    ADD,
-    SUB,
-    MULT,
-    DIV,
-    IN,
-    OUT,
-    JMP,
-    JA,
-    JAE,
-    JB,
-    JBE,
-    JE,
-    JNE,
-    DRAW
+    #include "cmds_gen.h"
 };
 
 enum Bits{
@@ -27,6 +12,7 @@ enum Bits{
     REG   = 64,
     MEM   = 32
 };
+#undef DEF_CMD_
 
 const int MAX_CMDS_SIZE = 512;
 const int MAX_CMD_SIZE = 32;
