@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
+#include <math.h>
 
 #include "../lib/stack/stack_hcpp/stack.h"
 #include "../include/commands.h"
@@ -18,7 +19,7 @@ int main(){
 }
 
 static int runProgramm(){
-    Processor prc = {.stk = stackCtor(INIT(stk) 0), .cmds = {}, .registers = {}, .RAM = {}, .ip = 0};
+    Processor prc = {.stk = stackCtor(INIT(stk) 0), .ret_adr = stackCtor(INIT(ret_adr) 0), .cmds = {}, .registers = {}, .RAM = {}, .ip = 0};
     FILE* fp = fopen("./exe_cmds.txt", "r");
 
     readFile(fp, prc.cmds);

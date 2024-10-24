@@ -14,7 +14,7 @@ enum Bits{
 };
 #undef DEF_CMD_
 
-const int MAX_CMDS_SIZE = 512;
+const int MAX_CMDS_SIZE = 1024;
 const int MAX_CMD_SIZE = 32;
 
 #endif

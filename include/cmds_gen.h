@@ -193,4 +193,32 @@ DEF_CMD_(DRAW, 15,
         }
         printf("\n");
     }
+    continue;
 })
+
+DEF_CMD_(CALL, 16,
+{
+    stackPush(prc.ret_adr, prc.ip + 1);
+    prc.ip = prc.cmds[prc.ip];
+    continue;
+})
+
+DEF_CMD_(RET, 17,
+{
+    stackPop(prc.ret_adr, &prc.ip);
+    continue;
+})
+
+DEF_CMD_(SQRT, 18,
+{
+    int value = 0;
+
+    stackPop(prc.stk, &value);
+
+    value = (int)sqrt((double)value * 100);
+    value /= 10;
+
+    stackPush(prc.stk, value);
+    continue;
+}
+)

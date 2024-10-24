@@ -123,7 +123,7 @@ static void pasteAdressArg(Label labels[], int* cmds, int* ip, FILE* inter_cmds)
 }
 
 static int ifRegister(const char* str){
-    if ((strcmp(str, "AX") == 0) || (strcmp(str, "BX") == 0) || (strcmp(str, "CX") == 0) || (strcmp(str, "DX") == 0)){
+    if ((strcmp(str, "AX") == 0) || (strcmp(str, "BX") == 0) || (strcmp(str, "CX") == 0) || (strcmp(str, "DX") == 0) || (strcmp(str, "EX") == 0) || (strcmp(str, "FX") == 0)){
         return 1;
     }
 
@@ -156,7 +156,7 @@ static int setArg(FILE* inter_cmds, int* cmds, Label* fixup_labels, int ip, int 
     if (type == PUSH || type == POP){
         return setArgPushPop(inter_cmds, cmds, ip, type);
     }
-    else if (type >= JMP && type <= JNE){
+    else if ((type >= JMP && type <= JNE) || type == CALL){
         cmds[ip++] = type;
         pasteAdressArg(fixup_labels, cmds, &ip, inter_cmds);
 
