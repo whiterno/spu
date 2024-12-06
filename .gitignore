@@ -2,4 +2,5 @@ obj/
 /dump.txt
 exe/
 /.DS_Store
-
+exe_cmds.txt
+.vscode
